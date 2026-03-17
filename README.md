@@ -39,6 +39,8 @@ cd android
 ./gradlew assembleDebug
 ```
 
+Nota: si quieres que GitHub compile el APK automaticamente para descargarlo, se puede agregar un workflow de GitHub Actions, pero requiere permisos especiales ("workflow") en GitHub. Si lo deseas te digo exactamente que archivo crear desde la web de GitHub.
+
 ## Notas
 
 - El anidado usa un heurístico tipo **MaxRects** (no garantiza óptimo global, pero funciona bien para cotización rápida).
