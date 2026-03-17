@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Optimizador de Cortes | Vidrio y Espejo</title>
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">Optimizador de cortes</div>
+          <div class="brand-sub">Vidrio y espejo · plano técnico + cotización</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="btnExport" class="btn btn-ghost" type="button" title="Exportar a JSON">Exportar</button>
+        <label class="btn btn-ghost filelike" title="Importar JSON">
+          Importar
+          <input id="importFile" type="file" accept="application/json" />
+        </label>
+        <button id="btnPrint" class="btn btn-primary" type="button" title="Imprimir / PDF">Imprimir</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel panel-left">
+        <div class="card">
+          <div class="card-h">
+            <h2>Material</h2>
+            <div class="hint">Elige la lámina para anidar automáticamente</div>
+          </div>
+          <div class="grid2">
+            <label class="field">
+              <span class="lbl">Tipo de lámina</span>
+              <select id="materialSelect"></select>
+            </label>
+            <label class="field">
+              <span class="lbl">Rotación 90°</span>
+              <select id="allowRotate">
+                <option value="yes" selected>Permitida</option>
+                <option value="no">No permitir</option>
+              </select>
+            </label>
+          </div>
+          <div class="material-meta" id="materialMeta"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h row">
+            <div>
+              <h2>Piezas</h2>
+              <div class="hint">Ancho y alto en centímetros. Usa cantidad para repetir.</div>
+            </div>
+            <div class="row-actions">
+              <button id="btnAddRow" class="btn btn-ghost" type="button">Agregar</button>
+              <button id="btnExample" class="btn btn-ghost" type="button">Ejemplo</button>
+              <button id="btnClear" class="btn btn-danger" type="button">Limpiar</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="tbl" aria-label="Tabla de piezas">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Ancho (cm)</th>
+                  <th>Alto (cm)</th>
+                  <th>Cant.</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="piecesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>Costos adicionales</h2>
+            <div class="hint">Editables antes de generar la cotización final</div>
+          </div>
+          <div class="grid2">
+            <label class="field">
+              <span class="lbl">Transporte (COP)</span>
+              <input id="costTransport" type="number" min="0" step="1000" value="40000" />
+            </label>
+            <label class="field">
+              <span class="lbl">Mano de obra (%)</span>
+              <input id="laborPct" type="number" min="0" step="0.5" value="0" />
+            </label>
+            <label class="field">
+              <span class="lbl">Silicona (COP / unidad)</span>
+              <input id="costSiliconeUnit" type="number" min="0" step="1000" value="25000" />
+            </label>
+            <label class="field">
+              <span class="lbl">Silicona (unidades)</span>
+              <input id="siliconeQty" type="number" min="0" step="1" value="1" />
+            </label>
+            <label class="field">
+              <span class="lbl">Viselado (COP)</span>
+              <input id="bevelCost" type="number" min="0" step="1000" value="0" />
+            </label>
+            <label class="field">
+              <span class="lbl">Arenado (COP)</span>
+              <input id="sandCost" type="number" min="0" step="1000" value="0" />
+            </label>
+            <label class="field">
+              <span class="lbl">Cinta LED (COP / metro)</span>
+              <input id="ledUnit" type="number" min="0" step="500" value="7000" />
+            </label>
+            <label class="field">
+              <span class="lbl">Cinta LED (metros)</span>
+              <input id="ledMeters" type="number" min="0" step="0.1" value="0" />
+            </label>
+            <label class="field">
+              <span class="lbl">Botón touch (COP / unidad)</span>
+              <input id="touchUnit" type="number" min="0" step="1000" value="50000" />
+            </label>
+            <label class="field">
+              <span class="lbl">Botón touch (unidades)</span>
+              <input id="touchQty" type="number" min="0" step="1" value="0" />
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>Notas</h2>
+            <div class="hint">Opcional: detalle para la cotización</div>
+          </div>
+          <label class="field">
+            <span class="lbl">Observaciones</span>
+            <textarea id="notes" rows="3" placeholder="Ej: Cantos pulidos, entrega en obra, etc."></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel panel-right">
+        <div class="card">
+          <div class="card-h row">
+            <div>
+              <h2>Plano de corte</h2>
+              <div class="hint" id="fitHint"></div>
+            </div>
+            <div class="row-actions">
+              <label class="field compact">
+                <span class="lbl">Lámina</span>
+                <select id="sheetSelect"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="canvas-wrap">
+            <div id="svgHost" class="svg-host" aria-label="Visualización de la lámina"></div>
+          </div>
+
+          <div class="legend-wrap">
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>Resumen</h2>
+            <div class="hint">Áreas, desperdicio y costos prorrateados</div>
+          </div>
+          <div class="kpi-grid" id="kpis"></div>
+          <div class="divider"></div>
+          <div class="totals" id="totals"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>Unidades: centímetros (cm). Costos: pesos colombianos (COP).</div>
+      <div class="muted">Tip: imprime para generar un PDF del plano y la cotización.</div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
