@@ -24,6 +24,7 @@ body{
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   font-size: 16.5px;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bg{
@@ -86,7 +87,7 @@ body{
   display:grid;
   grid-template-columns: 1fr 1.12fr;
   gap: 18px;
-  padding: 0 18px 18px;
+  padding: 0 calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
 }
 
 .panel{ display:flex; flex-direction:column; gap: 14px; }
@@ -245,6 +246,7 @@ label.filelike input[type="file"]{
   display:flex;
   align-items:center;
   justify-content:center;
+  touch-action: pan-x pan-y;
 }
 .legend-wrap{ margin-top: 10px; }
 .legend{
@@ -326,6 +328,14 @@ label.filelike input[type="file"]{
 }
 
 @media (max-width: 720px){
+  .topbar{
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: rgba(247,243,234,.68);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(16,26,36,.08);
+  }
   .svg-host{ aspect-ratio: 1 / 1; min-height: 320px; }
   .tbl thead{ display:none; }
   .tbl tr{
@@ -353,12 +363,15 @@ label.filelike input[type="file"]{
     align-items:flex-end;
   }
   .tbl input{ min-width: 0; }
+  .kpi-grid{ grid-template-columns: 1fr; }
+  .footer{ flex-direction: column; gap: 6px; }
 }
 
 @media (max-width: 560px){
   .grid2{ grid-template-columns: 1fr; }
   .topbar{ flex-direction: column; align-items:flex-start; gap: 10px; }
   .top-actions{ flex-wrap: wrap; }
+  .svg-host{ min-height: 280px; }
 }
 
 @media (pointer: coarse){
