@@ -722,30 +722,12 @@ function wireStaticEvents() {
       model: MODEL,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const file = new File([blob], exportFilename(), { type: "application/json" });
-
     const btn = $("btnExport");
     const prev = btn.textContent;
 
-    // Prefer share-sheet on mobile so it doesn't open as "code".
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-        await navigator.share({
-          title: "Cortes (export)",
-          text: "Respaldo de la cotizacion / plano de cortes.",
-          files: [file],
-        });
-        btn.textContent = "Compartido";
-        setTimeout(() => (btn.textContent = prev), 1200);
-        return;
-      }
-    } catch {
-      // Fall back to download.
-    }
-
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = file.name;
+    a.download = exportFilename();
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -917,6 +899,31 @@ function boot() {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
   }
+
+  // Show an explicit Install button when the browser allows it (Android Chrome).
+  let deferredInstallPrompt = null;
+  const installBtn = $("btnInstall");
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn?.classList?.remove("hidden");
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    installBtn?.classList?.add("hidden");
+  });
+  installBtn?.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    installBtn.disabled = true;
+    try {
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+    } catch {
+      // ignore
+    } finally {
+      installBtn.disabled = false;
+    }
+  });
 
   wireStaticEvents();
   renderAllFull();
