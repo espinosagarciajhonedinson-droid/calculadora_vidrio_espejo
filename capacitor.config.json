@@ -1,0 +1,8 @@
+{
+  "appId": "com.espinosa.cortesvidrio",
+  "appName": "Cortes Vidrio",
+  "webDir": "public",
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -18,6 +18,27 @@ python3 -m http.server 8000
 
 Luego abre `http://localhost:8000` en el navegador.
 
+## APK (Android)
+
+Este proyecto incluye una app Android generada con **Capacitor** (carpeta `android/`) que empaqueta la versión web (carpeta `public/`) para instalarla como APK.
+
+### Opcion A: Android Studio (recomendado)
+
+1. Instala Android Studio
+2. Abre la carpeta `android/` como proyecto
+3. Espera a que descargue el SDK/Gradle si lo pide
+4. Ve a `Build` -> `Build Bundle(s) / APK(s)` -> `Build APK(s)`
+
+El APK (debug) queda normalmente en `android/app/build/outputs/apk/debug/`.
+
+### Opcion B: comando (si ya tienes SDK)
+
+```bash
+npm run cap:sync
+cd android
+./gradlew assembleDebug
+```
+
 ## Notas
 
 - El anidado usa un heurístico tipo **MaxRects** (no garantiza óptimo global, pero funciona bien para cotización rápida).
