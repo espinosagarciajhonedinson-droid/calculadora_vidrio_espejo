@@ -2,7 +2,7 @@
 <html lang="es" translate="no" class="notranslate">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=0.5,maximum-scale=5,user-scalable=yes,viewport-fit=cover" />
     <title>Optimizador de Cortes | Vidrio y Espejo</title>
     <meta name="google" content="notranslate" />
     <meta name="theme-color" content="#1f2a35" />
@@ -23,13 +23,18 @@
           <div class="brand-sub">Vidrio y espejo · plano técnico + cotización</div>
         </div>
       </div>
-      <div class="top-actions">
-        <button id="btnInstall" class="btn btn-primary hidden" type="button" title="Instalar como app">Instalar</button>
-        <button id="btnExport" class="btn btn-ghost" type="button" title="Exportar a JSON">Exportar</button>
-        <label class="btn btn-ghost filelike" title="Importar JSON">
-          Importar
-          <input id="importFile" type="file" accept="application/json" />
-        </label>
+        <div class="top-actions">
+          <button id="btnInstall" class="btn btn-primary hidden" type="button" title="Instalar como app">Instalar</button>
+          <div class="zoomctl" aria-label="Zoom del plano">
+            <button id="zoomOut" class="btn btn-ghost" type="button" title="Reducir zoom">−</button>
+            <button id="zoomReset" class="btn btn-ghost" type="button" title="Zoom 100%">100%</button>
+            <button id="zoomIn" class="btn btn-ghost" type="button" title="Aumentar zoom">+</button>
+          </div>
+          <button id="btnExport" class="btn btn-ghost" type="button" title="Exportar a JSON">Exportar</button>
+          <label class="btn btn-ghost filelike" title="Importar JSON">
+            Importar
+            <input id="importFile" type="file" accept="application/json" />
+          </label>
         <button id="btnPrint" class="btn btn-primary" type="button" title="Imprimir / PDF">Imprimir</button>
       </div>
     </header>
