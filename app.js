@@ -626,10 +626,14 @@ function renderOutputs(comp) {
   MODEL.selectedSheetIndex = clampInt(MODEL.selectedSheetIndex, 0, maxIdx);
   renderSheetSelect(comp.sheets, MODEL.selectedSheetIndex);
 
-  $("svgHost").innerHTML = buildSVG(comp, MODEL.selectedSheetIndex);
+  const host = $("svgHost");
+  host.innerHTML = `<div id="svgZoom" class="svg-zoom"></div>`;
+  $("svgZoom").innerHTML = buildSVG(comp, MODEL.selectedSheetIndex);
   renderLegend(comp, MODEL.selectedSheetIndex);
   renderKPIs(comp);
   renderTotals(comp);
+
+  applyZoomUI();
 }
 
 let renderQueued = false;
@@ -646,6 +650,24 @@ function renderAllFull() {
   renderPiecesTable(MODEL.pieces);
   wireTableEvents(); // bind once
   renderAll();
+}
+
+let ZOOM = 1;
+function setZoom(next) {
+  const z = Math.max(0.5, Math.min(3, next));
+  ZOOM = z;
+  const el = $("svgZoom");
+  if (el) el.style.transform = `scale(${ZOOM})`;
+  const btn = $("zoomReset");
+  if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
+}
+
+function applyZoomUI() {
+  // Ensure the wrapper exists and keeps current zoom after rerenders.
+  const el = $("svgZoom");
+  if (el) el.style.transform = `scale(${ZOOM})`;
+  const btn = $("zoomReset");
+  if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
 }
 
 // ---------- Events ----------
@@ -714,6 +736,10 @@ function wireStaticEvents() {
   });
 
   $("btnPrint").addEventListener("click", () => window.print());
+
+  $("zoomIn")?.addEventListener("click", () => setZoom(ZOOM + 0.1));
+  $("zoomOut")?.addEventListener("click", () => setZoom(ZOOM - 0.1));
+  $("zoomReset")?.addEventListener("click", () => setZoom(1));
 
   $("btnExport").addEventListener("click", async () => {
     const payload = {
@@ -927,6 +953,7 @@ function boot() {
 
   wireStaticEvents();
   renderAllFull();
+  setZoom(1);
 }
 
 boot();
