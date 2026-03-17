@@ -262,13 +262,17 @@ label.filelike input[type="file"]{
   display:flex;
   align-items:center;
   justify-content:center;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  border-radius: 12px;
 }
 .svg-zoom{
+  flex: 0 0 auto;
   width: 100%;
   height: 100%;
-  transform-origin: center center;
-  transition: transform .12s ease;
-  touch-action: none;
+  transform-origin: 0 0;
+  touch-action: pan-x pan-y;
 }
 .legend-wrap{ margin-top: 10px; }
 .legend{

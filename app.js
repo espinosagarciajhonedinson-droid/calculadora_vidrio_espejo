@@ -633,6 +633,8 @@ function renderOutputs(comp) {
   renderKPIs(comp);
   renderTotals(comp);
 
+  // After DOM is in place, capture base viewport size for scroll-based zoom.
+  measureViewport();
   applyZoomUI();
   wirePinchZoom();
 }
@@ -654,34 +656,80 @@ function renderAllFull() {
 }
 
 let ZOOM = 1;
+let BASE_VIEWPORT = { w: 0, h: 0 };
+
+function measureViewport() {
+  const host = $("svgHost");
+  if (!host) return;
+  const w = host.clientWidth || 0;
+  const h = host.clientHeight || 0;
+  if (w > 0 && h > 0) BASE_VIEWPORT = { w, h };
+}
+
 function setZoom(next) {
   const z = Math.max(0.5, Math.min(3, next));
-  ZOOM = z;
+  const host = $("svgHost");
   const el = $("svgZoom");
-  if (el) el.style.transform = `scale(${ZOOM})`;
+  if (!host || !el) {
+    ZOOM = z;
+    return;
+  }
+
+  measureViewport();
+  const baseW = BASE_VIEWPORT.w || host.clientWidth || 1;
+  const baseH = BASE_VIEWPORT.h || host.clientHeight || 1;
+
+  const oldZoom = ZOOM;
+  const newZoom = z;
+  ZOOM = newZoom;
+
+  // Keep the visual center stable when zooming via buttons.
+  const cx = host.clientWidth / 2;
+  const cy = host.clientHeight / 2;
+  const contentX = host.scrollLeft + cx;
+  const contentY = host.scrollTop + cy;
+  const baseX = contentX / (oldZoom || 1);
+  const baseY = contentY / (oldZoom || 1);
+
+  el.style.width = `${Math.round(baseW * ZOOM)}px`;
+  el.style.height = `${Math.round(baseH * ZOOM)}px`;
+
+  host.scrollLeft = Math.max(0, baseX * ZOOM - cx);
+  host.scrollTop = Math.max(0, baseY * ZOOM - cy);
+
   const btn = $("zoomReset");
   if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
 }
 
 function applyZoomUI() {
   // Ensure the wrapper exists and keeps current zoom after rerenders.
+  const host = $("svgHost");
   const el = $("svgZoom");
-  if (el) el.style.transform = `scale(${ZOOM})`;
+  if (host && el) {
+    measureViewport();
+    const baseW = BASE_VIEWPORT.w || host.clientWidth || 1;
+    const baseH = BASE_VIEWPORT.h || host.clientHeight || 1;
+    el.style.width = `${Math.round(baseW * ZOOM)}px`;
+    el.style.height = `${Math.round(baseH * ZOOM)}px`;
+  }
   const btn = $("zoomReset");
   if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
 }
 
 function wirePinchZoom() {
+  const host = $("svgHost");
   const el = $("svgZoom");
-  if (!el) return;
+  if (!host || !el) return;
 
   // Avoid wiring multiple times across renders.
-  if (el.dataset.pinchWired === "1") return;
-  el.dataset.pinchWired = "1";
+  if (host.dataset.pinchWired === "1") return;
+  host.dataset.pinchWired = "1";
 
   const pointers = new Map();
   let startDist = 0;
   let startZoom = 1;
+  let startCenter = { x: 0, y: 0 };
+  let startScroll = { left: 0, top: 0 };
 
   const dist = (a, b) => {
     const dx = a.x - b.x;
@@ -689,26 +737,48 @@ function wirePinchZoom() {
     return Math.hypot(dx, dy);
   };
 
-  el.addEventListener("pointerdown", (e) => {
-    el.setPointerCapture?.(e.pointerId);
+  host.addEventListener("pointerdown", (e) => {
+    host.setPointerCapture?.(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) {
       const [p1, p2] = [...pointers.values()];
       startDist = dist(p1, p2);
       startZoom = ZOOM;
+      const r = host.getBoundingClientRect();
+      startCenter = { x: (p1.x + p2.x) / 2 - r.left, y: (p1.y + p2.y) / 2 - r.top };
+      startScroll = { left: host.scrollLeft, top: host.scrollTop };
     }
-  });
+  }, { passive: true });
 
-  el.addEventListener("pointermove", (e) => {
+  host.addEventListener("pointermove", (e) => {
     if (!pointers.has(e.pointerId)) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size !== 2) return;
+    // Prevent browser-level pinch-zoom when available; use our zoom instead.
+    e.preventDefault();
     const [p1, p2] = [...pointers.values()];
     const d = dist(p1, p2);
     if (startDist <= 0) return;
-    const next = startZoom * (d / startDist);
-    setZoom(next);
-  });
+    const next = Math.max(0.5, Math.min(3, startZoom * (d / startDist)));
+
+    measureViewport();
+    const baseW = BASE_VIEWPORT.w || host.clientWidth || 1;
+    const baseH = BASE_VIEWPORT.h || host.clientHeight || 1;
+
+    const oldZoom = ZOOM;
+    ZOOM = next;
+    el.style.width = `${Math.round(baseW * ZOOM)}px`;
+    el.style.height = `${Math.round(baseH * ZOOM)}px`;
+
+    // Keep pinch center anchored.
+    const baseX = (startScroll.left + startCenter.x) / (oldZoom || 1);
+    const baseY = (startScroll.top + startCenter.y) / (oldZoom || 1);
+    host.scrollLeft = Math.max(0, baseX * ZOOM - startCenter.x);
+    host.scrollTop = Math.max(0, baseY * ZOOM - startCenter.y);
+
+    const btn = $("zoomReset");
+    if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
+  }, { passive: false });
 
   const end = (e) => {
     pointers.delete(e.pointerId);
@@ -717,8 +787,8 @@ function wirePinchZoom() {
       startZoom = ZOOM;
     }
   };
-  el.addEventListener("pointerup", end);
-  el.addEventListener("pointercancel", end);
+  host.addEventListener("pointerup", end, { passive: true });
+  host.addEventListener("pointercancel", end, { passive: true });
 }
 
 // ---------- Events ----------
@@ -1005,6 +1075,12 @@ function boot() {
   wireStaticEvents();
   renderAllFull();
   setZoom(1);
+
+  window.addEventListener("resize", () => {
+    // Keep zoom consistent when orientation changes.
+    measureViewport();
+    applyZoomUI();
+  }, { passive: true });
 }
 
 boot();
