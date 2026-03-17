@@ -266,6 +266,7 @@ label.filelike input[type="file"]{
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   border-radius: 12px;
+  touch-action: pan-x pan-y;
 }
 .svg-zoom{
   flex: 0 0 auto;

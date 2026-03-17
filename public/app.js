@@ -737,6 +737,20 @@ function wirePinchZoom() {
     return Math.hypot(dx, dy);
   };
 
+  const applyZoom = (nextZoom, anchorX, anchorY, baseX, baseY) => {
+    measureViewport();
+    const baseW = BASE_VIEWPORT.w || host.clientWidth || 1;
+    const baseH = BASE_VIEWPORT.h || host.clientHeight || 1;
+    ZOOM = Math.max(0.5, Math.min(3, nextZoom));
+    el.style.width = `${Math.round(baseW * ZOOM)}px`;
+    el.style.height = `${Math.round(baseH * ZOOM)}px`;
+    host.scrollLeft = Math.max(0, baseX * ZOOM - anchorX);
+    host.scrollTop = Math.max(0, baseY * ZOOM - anchorY);
+    const btn = $("zoomReset");
+    if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
+  };
+
+  // ----- Pointer Events (modern browsers) -----
   host.addEventListener("pointerdown", (e) => {
     host.setPointerCapture?.(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -760,24 +774,10 @@ function wirePinchZoom() {
     const d = dist(p1, p2);
     if (startDist <= 0) return;
     const next = Math.max(0.5, Math.min(3, startZoom * (d / startDist)));
-
-    measureViewport();
-    const baseW = BASE_VIEWPORT.w || host.clientWidth || 1;
-    const baseH = BASE_VIEWPORT.h || host.clientHeight || 1;
-
-    const oldZoom = ZOOM;
-    ZOOM = next;
-    el.style.width = `${Math.round(baseW * ZOOM)}px`;
-    el.style.height = `${Math.round(baseH * ZOOM)}px`;
-
-    // Keep pinch center anchored.
-    const baseX = (startScroll.left + startCenter.x) / (oldZoom || 1);
-    const baseY = (startScroll.top + startCenter.y) / (oldZoom || 1);
-    host.scrollLeft = Math.max(0, baseX * ZOOM - startCenter.x);
-    host.scrollTop = Math.max(0, baseY * ZOOM - startCenter.y);
-
-    const btn = $("zoomReset");
-    if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
+    const oldZoom = startZoom || 1;
+    const baseX = (startScroll.left + startCenter.x) / oldZoom;
+    const baseY = (startScroll.top + startCenter.y) / oldZoom;
+    applyZoom(next, startCenter.x, startCenter.y, baseX, baseY);
   }, { passive: false });
 
   const end = (e) => {
@@ -789,6 +789,41 @@ function wirePinchZoom() {
   };
   host.addEventListener("pointerup", end, { passive: true });
   host.addEventListener("pointercancel", end, { passive: true });
+
+  // ----- Touch Events fallback (Android WebView reliability) -----
+  let touchActive = false;
+  host.addEventListener("touchstart", (e) => {
+    if (e.touches?.length !== 2) return;
+    touchActive = true;
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    startDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    startZoom = ZOOM;
+    const r = host.getBoundingClientRect();
+    startCenter = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+    startScroll = { left: host.scrollLeft, top: host.scrollTop };
+  }, { passive: true });
+
+  host.addEventListener("touchmove", (e) => {
+    if (!touchActive) return;
+    if (e.touches?.length !== 2) return;
+    // Stop page from zooming; we zoom the canvas instead.
+    e.preventDefault();
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    if (startDist <= 0) return;
+    const next = Math.max(0.5, Math.min(3, startZoom * (d / startDist)));
+    const oldZoom = startZoom || 1;
+    const baseX = (startScroll.left + startCenter.x) / oldZoom;
+    const baseY = (startScroll.top + startCenter.y) / oldZoom;
+    applyZoom(next, startCenter.x, startCenter.y, baseX, baseY);
+  }, { passive: false });
+
+  host.addEventListener("touchend", (e) => {
+    if ((e.touches?.length || 0) < 2) touchActive = false;
+  }, { passive: true });
+  host.addEventListener("touchcancel", () => { touchActive = false; }, { passive: true });
 }
 
 // ---------- Events ----------
