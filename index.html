@@ -24,13 +24,8 @@
         </div>
       </div>
         <div class="top-actions">
-          <button id="btnInstall" class="btn btn-primary hidden" type="button" title="Instalar como app">Instalar</button>
-          <div class="zoomctl" aria-label="Zoom del plano">
-            <button id="zoomOut" class="btn btn-ghost" type="button" title="Reducir zoom">−</button>
-            <button id="zoomReset" class="btn btn-ghost" type="button" title="Zoom 100%">100%</button>
-            <button id="zoomIn" class="btn btn-ghost" type="button" title="Aumentar zoom">+</button>
-          </div>
-          <button id="btnExport" class="btn btn-ghost" type="button" title="Exportar a JSON">Exportar</button>
+        <button id="btnInstall" class="btn btn-primary hidden" type="button" title="Instalar como app">Instalar</button>
+        <button id="btnExport" class="btn btn-ghost" type="button" title="Exportar a JSON">Exportar</button>
           <label class="btn btn-ghost filelike" title="Importar JSON">
             Importar
             <input id="importFile" type="file" accept="application/json" />
@@ -168,6 +163,11 @@
           </div>
 
           <div class="canvas-wrap">
+            <div class="canvas-toolbar" aria-label="Zoom del plano">
+              <button id="zoomOut" class="btn btn-ghost" type="button" title="Reducir zoom">−</button>
+              <button id="zoomReset" class="btn btn-ghost" type="button" title="Zoom 100%">100%</button>
+              <button id="zoomIn" class="btn btn-ghost" type="button" title="Aumentar zoom">+</button>
+            </div>
             <div id="svgHost" class="svg-host" aria-label="Visualización de la lámina"></div>
           </div>
 

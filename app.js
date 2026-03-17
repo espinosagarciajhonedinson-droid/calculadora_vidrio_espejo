@@ -634,6 +634,7 @@ function renderOutputs(comp) {
   renderTotals(comp);
 
   applyZoomUI();
+  wirePinchZoom();
 }
 
 let renderQueued = false;
@@ -668,6 +669,56 @@ function applyZoomUI() {
   if (el) el.style.transform = `scale(${ZOOM})`;
   const btn = $("zoomReset");
   if (btn) btn.textContent = `${Math.round(ZOOM * 100)}%`;
+}
+
+function wirePinchZoom() {
+  const el = $("svgZoom");
+  if (!el) return;
+
+  // Avoid wiring multiple times across renders.
+  if (el.dataset.pinchWired === "1") return;
+  el.dataset.pinchWired = "1";
+
+  const pointers = new Map();
+  let startDist = 0;
+  let startZoom = 1;
+
+  const dist = (a, b) => {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.hypot(dx, dy);
+  };
+
+  el.addEventListener("pointerdown", (e) => {
+    el.setPointerCapture?.(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      const [p1, p2] = [...pointers.values()];
+      startDist = dist(p1, p2);
+      startZoom = ZOOM;
+    }
+  });
+
+  el.addEventListener("pointermove", (e) => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size !== 2) return;
+    const [p1, p2] = [...pointers.values()];
+    const d = dist(p1, p2);
+    if (startDist <= 0) return;
+    const next = startZoom * (d / startDist);
+    setZoom(next);
+  });
+
+  const end = (e) => {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) {
+      startDist = 0;
+      startZoom = ZOOM;
+    }
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
 }
 
 // ---------- Events ----------
