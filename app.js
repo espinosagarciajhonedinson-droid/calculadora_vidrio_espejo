@@ -722,13 +722,36 @@ function wireStaticEvents() {
       model: MODEL,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const file = new File([blob], exportFilename(), { type: "application/json" });
+
+    const btn = $("btnExport");
+    const prev = btn.textContent;
+
+    // Prefer share-sheet on mobile so it doesn't open as "code".
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        await navigator.share({
+          title: "Cortes (export)",
+          text: "Respaldo de la cotizacion / plano de cortes.",
+          files: [file],
+        });
+        btn.textContent = "Compartido";
+        setTimeout(() => (btn.textContent = prev), 1200);
+        return;
+      }
+    } catch {
+      // Fall back to download.
+    }
+
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `cortes-${Date.now()}.json`;
+    a.download = file.name;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+    btn.textContent = "Exportado";
+    setTimeout(() => (btn.textContent = prev), 1200);
   });
 
   $("importFile").addEventListener("change", async (e) => {
@@ -900,3 +923,14 @@ function boot() {
 }
 
 boot();
+
+function exportFilename() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const y = d.getFullYear();
+  const m = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  return `cortes-${y}${m}${day}-${hh}${mm}.json`;
+}
