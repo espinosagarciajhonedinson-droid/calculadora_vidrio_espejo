@@ -888,6 +888,13 @@ function boot() {
   $("laborPct").value = String(MODEL.extras.laborPct);
   $("notes").value = MODEL.notes;
 
+  // PWA: basic offline + installability
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  }
+
   wireStaticEvents();
   renderAllFull();
 }
